@@ -66,24 +66,6 @@ const (
 	ReasonUnknown = "Unknown"
 )
 
-// EnforcedTypes are the types enforced by HNC that they should not show up in
-// the spec and only in the status. Any configurations of the enforced types in
-// the spec would cause 'MultipleConfigurationsForType' condition.
-var EnforcedTypes = []ResourceSpec{
-	{Group: RBACGroup, Resource: RoleResource, Mode: Propagate},
-	{Group: RBACGroup, Resource: RoleBindingResource, Mode: Propagate},
-}
-
-// IsEnforcedType returns true if configuration is on an enforced type.
-func IsEnforcedType(grm ResourceSpec) bool {
-	for _, tp := range EnforcedTypes {
-		if tp.Group == grm.Group && tp.Resource == grm.Resource {
-			return true
-		}
-	}
-	return false
-}
-
 // ResourceSpec defines the desired synchronization state of a specific resource.
 type ResourceSpec struct {
 	// Group of the resource defined below. This is used to unambiguously identify

@@ -99,11 +99,6 @@ func (v *Validator) validateTypes(inst *api.HNCConfiguration, ts gvkSet) admissi
 	for i, r := range inst.Spec.Resources {
 		gr := schema.GroupResource{Group: r.Group, Resource: r.Resource}
 		field := field.NewPath("spec", "resources").Index(i)
-		// Validate the type configured is not an HNC enforced type.
-		if api.IsEnforcedType(r) {
-			return webhooks.DenyInvalid(field, fmt.Sprintf("Invalid configuration of %s in the spec, because it's enforced by HNC "+
-				"with 'Propagate' mode. Please remove it from the spec.", gr))
-		}
 
 		// Validate the type exists in the apiserver. If yes, convert GR to GVK. We
 		// use GVK because we will need to checkForest() later to avoid source

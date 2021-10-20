@@ -155,34 +155,9 @@ func (r *Reconciler) reconcileTypes(inst *api.HNCConfiguration) error {
 	// Overwrite the type set each time. Initialize them with the enforced types.
 	r.activeGVKMode = gr2gvkMode{}
 	r.activeGR = gvk2gr{}
-	if err := r.ensureEnforcedTypes(inst, allRes); err != nil {
-		// Early exit if any enforced types are not found for some reason to retry.
-		return err
-	}
 
 	// Add all valid configurations from user-configured types.
 	r.reconcileConfigTypes(inst, allRes)
-	return nil
-}
-
-// ensureEnforcedTypes ensures HNC enforced types 'roles' and 'rolebindings' are
-// in the type set. Return error to retry (if any) since they are enforced types.
-func (r *Reconciler) ensureEnforcedTypes(inst *api.HNCConfiguration, allRes []*restmapper.APIGroupResources) error {
-	for _, t := range api.EnforcedTypes {
-		gr := schema.GroupResource{Group: t.Group, Resource: t.Resource}
-
-		// Look if the resource exists in the API server.
-		gvk, err := gvkForGR(gr, allRes)
-		if err != nil {
-			// If the type is not found, log error and write conditions and return the
-			// error for a retry.
-			r.Log.Error(err, "while trying to reconcile the enforced resource", "resource", gr)
-			r.writeCondition(inst, api.ConditionBadTypeConfiguration, api.ReasonResourceNotFound, err.Error())
-			return err
-		}
-		r.activeGVKMode[gr] = gvkMode{gvk, t.Mode}
-		r.activeGR[gvk] = gr
-	}
 	return nil
 }
 
@@ -199,14 +174,11 @@ func (r *Reconciler) reconcileConfigTypes(inst *api.HNCConfiguration, allRes []*
 		if gvkMode, exist := r.activeGVKMode[gr]; exist {
 			log := r.Log.WithValues("resource", gr, "appliedMode", gvkMode.mode)
 			msg := ""
-			// Set a different message if the type is enforced by HNC.
-			if api.IsEnforcedType(rsc) {
-				msg = fmt.Sprintf("The sync mode for %q is enforced by HNC as %q and cannot be overridden", gr, api.Propagate)
-				log.Info("The sync mode for this resource is enforced by HNC and cannot be overridden")
-			} else {
-				log.Info("Multiple sync mode settings found; only one is allowed")
-				msg = fmt.Sprintf("Multiple sync mode settings found for %q; all but one (%q) will be ignored", gr, gvkMode.mode)
-			}
+
+			// enforced types are no more! => always unenforced type
+			log.Info("Multiple sync mode settings found; only one is allowed")
+			msg = fmt.Sprintf("Multiple sync mode settings found for %q; all but one (%q) will be ignored", gr, gvkMode.mode)
+
 			r.writeCondition(inst, api.ConditionBadTypeConfiguration, api.ReasonMultipleConfigsForType, msg)
 			continue
 		}
