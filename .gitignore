@@ -34,3 +34,5 @@ manifests
 *.swo
 *~
 .vscode
+
+Dockerfile.private
